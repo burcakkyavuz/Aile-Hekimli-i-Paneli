@@ -6,13 +6,573 @@
   <title>Aile Hekimliği Paneli</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1f16">
+
   <style>
-    body { background:#0b1f16; color:white; font-family:-apple-system; padding:20px; }
-    h1 { color:#a5d6a7; }
+    :root{
+      --bg:#0b1f16;
+      --bg-soft:#10271c;
+      --card:#153424;
+      --accent:#4caf50;
+      --accent-soft:#2e7d32;
+      --text:#f4fff6;
+      --muted:#a7c9b0;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      background:radial-gradient(circle at top,#1f3b27 0,#0b1f16 45%,#05120b 100%);
+      color:var(--text);
+      padding:18px;
+      display:flex;
+      justify-content:center;
+    }
+    .app{
+      width:100%;
+      max-width:900px;
+    }
+    h1{
+      margin:0 0 4px 0;
+      font-size:22px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .badge{
+      background:rgba(76,175,80,0.15);
+      border:1px solid rgba(76,175,80,0.6);
+      border-radius:999px;
+      padding:2px 10px;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .panel{
+      background:var(--bg-soft);
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.06);
+      padding:14px 14px 16px;
+      margin-top:14px;
+      box-shadow:0 16px 30px rgba(0,0,0,0.35);
+    }
+    .panel-title{
+      font-size:15px;
+      margin-bottom:8px;
+      font-weight:600;
+    }
+    input,select,textarea{
+      width:100%;
+      margin:5px 0 10px;
+      padding:9px 10px;
+      font-size:14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(8,25,16,0.85);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 1px rgba(76,175,80,0.6);
+    }
+    textarea{min-height:70px;resize:vertical;}
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .col{
+      flex:1;
+      min-width:150px;
+    }
+    button{
+      border:none;
+      border-radius:999px;
+      padding:9px 16px;
+      font-size:14px;
+      font-weight:500;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),var(--accent-soft));
+      color:white;
+      box-shadow:0 10px 20px rgba(0,0,0,0.35);
+    }
+    .btn-ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+    .btn-danger{
+      background:rgba(255,107,107,0.12);
+      color:#ffb3b3;
+      border:1px solid rgba(255,107,107,0.5);
+    }
+    .small{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .card{
+      background:var(--card);
+      border-radius:14px;
+      padding:10px 11px;
+      border:1px solid rgba(255,255,255,0.06);
+      margin-top:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card-main{
+      font-size:14px;
+    }
+    .card-name{
+      font-weight:600;
+      margin-bottom:4px;
+    }
+    .pill{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      background:rgba(76,175,80,0.18);
+      border:1px solid rgba(76,175,80,0.5);
+      margin-right:4px;
+    }
+    .pill-alt{
+      background:rgba(88,130,252,0.16);
+      border-color:rgba(88,130,252,0.6);
+    }
+    .card-not{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .card-meta{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .card-actions{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      min-width:80px;
+    }
+    .filters-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .filters-row .col{min-width:140px;}
+    .tag-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin:6px 0 4px;
+    }
+    .tag{
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(11,31,22,0.9);
+      color:var(--muted);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .tag-active{
+      background:linear-gradient(135deg,var(--accent),var(--accent-soft));
+      border-color:rgba(76,175,80,0.9);
+      color:white;
+    }
+    .cat-block{
+      margin-top:8px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(9,26,18,0.9);
+      font-size:13px;
+    }
+    .cat-block-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+    }
+    .cat-title{
+      font-weight:600;
+      font-size:13px;
+    }
+    .cat-remove{
+      font-size:11px;
+      background:transparent;
+      border-radius:999px;
+      padding:3px 8px;
+      border:1px solid rgba(255,255,255,0.2);
+      color:#ffb3b3;
+      cursor:pointer;
+    }
+    @media(max-width:600px){
+      body{padding:10px;}
+      .panel{padding:12px;}
+    }
   </style>
 </head>
 <body>
-  <h1>🌲 Aile Hekimliği Paneli – PWA Dosyaları Yüklendi</h1>
-  <p>Bu dosya başarıyla oluşturuldu. Gerçek uygulama arayüzünü eklemeye hazır.</p>
+  <div class="app">
+    <header style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h1>🌲 Aile Hekimliği Paneli</h1>
+        <div class="subtitle">
+          Çoklu kategori + HYP tarihli, orman temalı mini hasta takip uygulaman.
+        </div>
+      </div>
+      <div class="badge">Offline • PWA</div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-title">Yeni Hasta Kaydı</div>
+      <div class="row">
+        <div class="col">
+          <input id="ad" placeholder="Ad Soyad">
+        </div>
+        <div class="col">
+          <input id="tc" placeholder="TC">
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:4px;">Kategori(ler)i seç:</div>
+      <div class="tag-row" id="tagRow"></div>
+
+      <div id="kategoriFormAlan"></div>
+
+      <textarea id="not" placeholder="Genel notlar"></textarea>
+      <button class="btn-primary" onclick="ekle()">➕ Kaydet</button>
+      <span class="small">Her hasta için birden fazla kategori + HYP tarihi ekleyebilirsin.</span>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Filtreler & Kayıtlar</div>
+      <div class="filters-row">
+        <div class="col">
+          <input id="fAd" placeholder="İsimde ara">
+        </div>
+        <div class="col">
+          <input id="fTc" placeholder="TC'de ara">
+        </div>
+      </div>
+      <div class="filters-row">
+        <div class="col">
+          <select id="fKategori">
+            <option value="">Kategori (filtre)</option>
+            <option>Hipertansiyon</option>
+            <option>DM</option>
+            <option>KVR</option>
+            <option>Obezite</option>
+            <option>Yaşlı İzlem</option>
+            <option>KAH İzlem</option>
+            <option>İnme İzlem</option>
+            <option>KBH İzlem</option>
+            <option>KOAH İzlem</option>
+            <option>Astım İzlem</option>
+          </select>
+        </div>
+        <div class="col">
+          <select id="fAlt">
+            <option value="">Alt kategori (Tarama/İzlem)</option>
+            <option>Tarama</option>
+            <option>İzlem</option>
+          </select>
+        </div>
+        <div class="col">
+          <select id="fSort">
+            <option value="yeni">Sırala: Yeni → Eski</option>
+            <option value="eski">Sırala: Eski → Yeni</option>
+            <option value="ad">Sırala: Ada göre (A-Z)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:6px;">
+        <button class="btn-ghost" onclick="filtreTemizle()">Filtreleri temizle</button>
+      </div>
+      <div id="liste" class="small">(Henüz kayıt yok)</div>
+    </section>
+
+    <div class="small" style="margin-top:10px;text-align:right;color:var(--muted);">
+      Çoklu kategori + HYP sistemi • Aile Hekimliği Paneli 🌲
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "aile_hekimligi_paneli_multikat_v2";
+
+    const KATEGORILER = [
+      { ad:"Hipertansiyon", hasAlt:true },
+      { ad:"DM", hasAlt:true },
+      { ad:"KVR", hasAlt:true },
+      { ad:"Obezite", hasAlt:true },
+      { ad:"Yaşlı İzlem", hasAlt:false },
+      { ad:"KAH İzlem", hasAlt:false },
+      { ad:"İnme İzlem", hasAlt:false },
+      { ad:"KBH İzlem", hasAlt:false },
+      { ad:"KOAH İzlem", hasAlt:false },
+      { ad:"Astım İzlem", hasAlt:false }
+    ];
+
+    let db = [];
+    try{
+      db = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }catch(e){
+      db = [];
+    }
+
+    let seciliKategoriler = {};
+
+    function kaydetLocal(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    function renderTagSelector(){
+      const row = document.getElementById("tagRow");
+      row.innerHTML = "";
+      KATEGORILER.forEach(k =>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tag" + (seciliKategoriler[k.ad] ? " tag-active" : "");
+        btn.textContent = k.ad;
+        btn.onclick = () => toggleKategori(k);
+        row.appendChild(btn);
+      });
+    }
+
+    function toggleKategori(kat){
+      if(seciliKategoriler[kat.ad]){
+        delete seciliKategoriler[kat.ad];
+      }else{
+        seciliKategoriler[kat.ad] = { hyp:"", alt:"", hasAlt:kat.hasAlt };
+      }
+      renderTagSelector();
+      renderKategoriForm();
+    }
+
+    function renderKategoriForm(){
+      const alan = document.getElementById("kategoriFormAlan");
+      alan.innerHTML = "";
+      const entries = Object.entries(seciliKategoriler);
+      if(!entries.length){
+        alan.innerHTML = '<div class="small" style="margin-top:4px;color:var(--muted);">En az bir kategori seçmelisin.</div>';
+        return;
+      }
+      entries.forEach(([ad, obj])=>{
+        const blk = document.createElement("div");
+        blk.className = "cat-block";
+
+        const header = document.createElement("div");
+        header.className = "cat-block-header";
+        const title = document.createElement("div");
+        title.className = "cat-title";
+        title.textContent = ad;
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "cat-remove";
+        removeBtn.textContent = "Kaldır";
+        removeBtn.onclick = () => { delete seciliKategoriler[ad]; renderTagSelector(); renderKategoriForm(); };
+        header.appendChild(title);
+        header.appendChild(removeBtn);
+        blk.appendChild(header);
+
+        const hypInput = document.createElement("input");
+        hypInput.placeholder = "HYP Tarihi (örn: 2025-02-11)";
+        hypInput.value = obj.hyp || "";
+        hypInput.oninput = e => { seciliKategoriler[ad].hyp = e.target.value.trim(); };
+        blk.appendChild(hypInput);
+
+        if(obj.hasAlt){
+          const altSel = document.createElement("select");
+          altSel.innerHTML = '<option value="">Alt Kategori (Tarama / İzlem)</option><option value="Tarama">Tarama</option><option value="İzlem">İzlem</option>';
+          if(obj.alt){
+            altSel.value = obj.alt;
+          }
+          altSel.onchange = e => { seciliKategoriler[ad].alt = e.target.value; };
+          blk.appendChild(altSel);
+        }
+
+        alan.appendChild(blk);
+      });
+    }
+
+    function ekle(){
+      const ad = document.getElementById("ad").value.trim();
+      const tc = document.getElementById("tc").value.trim();
+      const not = document.getElementById("not").value.trim();
+
+      if(!ad || !tc){
+        alert("Ad ve TC zorunlu.");
+        return;
+      }
+
+      const katEntries = Object.entries(seciliKategoriler);
+      if(!katEntries.length){
+        alert("En az bir kategori seçmelisin.");
+        return;
+      }
+
+      const kategorilerArr = [];
+      for(const [adK, obj] of katEntries){
+        if(obj.hasAlt && !obj.alt){
+          alert(adK + " için Tarama/İzlem seçmelisin.");
+          return;
+        }
+        kategorilerArr.push({
+          kategori: adK,
+          altkategori: obj.alt || "",
+          hyp: obj.hyp || ""
+        });
+      }
+
+      db.push({
+        id: Date.now(),
+        ad,
+        tc,
+        kategoriler: kategorilerArr,
+        not,
+        createdAt: new Date().toISOString()
+      });
+      kaydetLocal();
+
+      document.getElementById("ad").value = "";
+      document.getElementById("tc").value = "";
+      document.getElementById("not").value = "";
+      seciliKategoriler = {};
+      renderTagSelector();
+      renderKategoriForm();
+      listele();
+    }
+
+    function filtreTemizle(){
+      document.getElementById("fAd").value = "";
+      document.getElementById("fTc").value = "";
+      document.getElementById("fKategori").value = "";
+      document.getElementById("fAlt").value = "";
+      document.getElementById("fSort").value = "yeni";
+      listele();
+    }
+
+    function listele(){
+      const container = document.getElementById("liste");
+      if(!db.length){
+        container.innerHTML = "(Henüz kayıt yok)";
+        return;
+      }
+      const fAd = document.getElementById("fAd").value.trim().toLowerCase();
+      const fTc = document.getElementById("fTc").value.trim();
+      const fKategori = document.getElementById("fKategori").value;
+      const fAlt = document.getElementById("fAlt").value;
+      const fSort = document.getElementById("fSort").value;
+
+      let rows = db.slice();
+
+      if(fAd){
+        rows = rows.filter(r => (r.ad || "").toLowerCase().includes(fAd));
+      }
+      if(fTc){
+        rows = rows.filter(r => (r.tc || "").includes(fTc));
+      }
+      if(fKategori){
+        rows = rows.filter(r => (r.kategoriler || []).some(k => k.kategori === fKategori));
+      }
+      if(fAlt){
+        rows = rows.filter(r => (r.kategoriler || []).some(k => k.altkategori === fAlt));
+      }
+
+      if(fSort === "yeni"){
+        rows.sort((a,b)=> b.id - a.id);
+      }else if(fSort === "eski"){
+        rows.sort((a,b)=> a.id - b.id);
+      }else if(fSort === "ad"){
+        rows.sort((a,b)=> (a.ad || "").localeCompare(b.ad || "", "tr"));
+      }
+
+      if(!rows.length){
+        container.innerHTML = "(Filtreye göre kayıt bulunamadı)";
+        return;
+      }
+
+      container.innerHTML = "";
+      rows.forEach(r=>{
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const main = document.createElement("div");
+        main.className = "card-main";
+
+        const created = r.createdAt ? (r.createdAt.split("T")[0]) : "";
+
+        let katHtml = "";
+        (r.kategoriler || []).forEach(k=>{
+          const line = [
+            k.kategori || "",
+            k.altkategori ? " – " + k.altkategori : "",
+            k.hyp ? " – HYP: " + k.hyp : ""
+          ].join("");
+          katHtml += `<div>• ${escapeHtml(line)}</div>`;
+        });
+
+        main.innerHTML = `
+          <div class="card-name">${escapeHtml(r.ad || "")}</div>
+          <div class="card-meta">TC: ${escapeHtml(r.tc || "")}${created ? " • Kaydedildi: " + escapeHtml(created) : ""}</div>
+          <div style="margin-top:4px;">${katHtml || "<span class='small'>Kategori bilgisi yok</span>"}</div>
+          ${r.not ? `<div class="card-not">${escapeHtml(r.not)}</div>` : ""}
+        `;
+
+        const actions = document.createElement("div");
+        actions.className = "card-actions";
+        const btnSil = document.createElement("button");
+        btnSil.className = "btn-danger";
+        btnSil.textContent = "Sil";
+        btnSil.onclick = ()=> sil(r.id);
+        actions.appendChild(btnSil);
+
+        card.appendChild(main);
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
+
+    function sil(id){
+      if(!confirm("Bu kaydı silmek istiyor musun?")) return;
+      db = db.filter(r => r.id !== id);
+      kaydetLocal();
+      listele();
+    }
+
+    function escapeHtml(str){
+      if(str == null) return "";
+      return String(str).replace(/[&<>\"']/g, c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    if("serviceWorker" in navigator){
+      window.addEventListener("load", ()=>{
+        navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+      });
+    }
+
+    renderTagSelector();
+    renderKategoriForm();
+    listele();
+  </script>
 </body>
 </html>
