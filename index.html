@@ -34,36 +34,47 @@ h1{margin:0 0 6px 0;color:#a5d6a7;font-size:22px}
   margin:12px 0;
   border:1px solid rgba(255,255,255,0.06);
 }
-button{
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1;min-width:160px}
+input,select,textarea,button{
   width:100%;
-  padding:12px;
-  border-radius:999px;
-  border:none;
+  margin:6px 0;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(8,25,16,0.85);
+  color:var(--text);
+  font-size:14px;
+}
+textarea{min-height:70px}
+button{
   background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:white;
+  border:none;
   font-weight:700;
-  font-size:15px;
   cursor:pointer;
 }
-.hidden{display:none}
-.center{
-  min-height:80vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  gap:12px;
+.cat{background:#0e2318;border-radius:12px;padding:10px;margin:8px 0}
+.cat label{display:flex;gap:8px;align-items:center}
+.cat-fields{margin-top:6px}
+.card{
+  background:var(--card);
+  border-radius:12px;
+  padding:10px;
+  margin-top:10px;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.btn-danger{
+  background:#5b1c1c;
+  color:#ffdede;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
 }
 </style>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { 
-  getFirestore 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
@@ -75,55 +86,96 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
 
-// 🔐 SADECE SENİN GOOGLE UID
-const ALLOWED_UID = "hguCQh6k7jPEcrwMT2kv1GsiZcj2";
+const KATS = [
+ "Hipertansiyon","DM","KVR","Obezite",
+ "Yaşlı İzlem","KAH İzlem","İnme İzlem",
+ "KBH İzlem","KOAH İzlem","Astım İzlem"
+];
+const ILK4 = ["Hipertansiyon","DM","KVR","Obezite"];
 
-window.login = async ()=>{
-  await signInWithRedirect(auth, provider);
+window.onload = () => {
+  const host = document.getElementById("kats");
+  KATS.forEach(k=>{
+    host.innerHTML += `
+      <div class="cat">
+        <label><input type="checkbox" data-k="${k}"> ${k}</label>
+        <div class="cat-fields">
+          ${ILK4.includes(k)?`
+          <select data-a="${k}">
+            <option value="">Tarama / İzlem</option>
+            <option>Tarama</option>
+            <option>İzlem</option>
+          </select>`:""}
+          <input placeholder="HYP tarihi" data-h="${k}">
+        </div>
+      </div>`;
+  });
+  load();
 };
 
-onAuthStateChanged(auth, user=>{
-  if(!user){
-    document.getElementById("login").classList.remove("hidden");
-    document.getElementById("app").classList.add("hidden");
-    return;
+async function ekle(){
+  const ad = adsoyad.value.trim();
+  const tc = tcno.value.trim();
+  if(!ad||!tc) return alert("Ad ve TC zorunlu");
+
+  const kategoriler=[];
+  document.querySelectorAll("[data-k]").forEach(c=>{
+    if(c.checked){
+      const k=c.dataset.k;
+      const a=document.querySelector(`[data-a="${k}"]`)?.value||"";
+      const h=document.querySelector(`[data-h="${k}"]`)?.value||"";
+      if(ILK4.includes(k)&&!a) return alert(k+" için Tarama/İzlem seç");
+      kategoriler.push({kategori:k,alt:a,hyp:h});
+    }
+  });
+  if(!kategoriler.length) return alert("Kategori seç");
+
+  await addDoc(collection(db,"patients"),{
+    ad,tc,kategoriler,createdAt:new Date()
+  });
+  load();
+}
+
+async function load(){
+  const q=query(collection(db,"patients"),orderBy("createdAt","desc"));
+  const s=await getDocs(q);
+  list.innerHTML="";
+  s.forEach(d=>{
+    const r=d.data();
+    list.innerHTML+=`
+      <div class="card">
+        <b>${r.ad}</b> – ${r.tc}
+        ${r.kategoriler.map(x=>`<div>• ${x.kategori} ${x.alt||""} ${x.hyp||""}</div>`).join("")}
+        <button class="btn-danger" onclick="sil('${d.id}')">Sil</button>
+      </div>`;
+  });
+}
+window.ekle=ekle;
+window.sil=async id=>{
+  if(confirm("Silinsin mi?")){
+    await deleteDoc(doc(db,"patients",id));
+    load();
   }
-
-  if(user.uid !== ALLOWED_UID){
-    alert("Bu hesaba yetki verilmedi.");
-    auth.signOut();
-    return;
-  }
-
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-});
-
+};
 </script>
 </head>
 
 <body>
+<h1>🌲 Aile Hekimliği Paneli</h1>
 
-<div id="login" class="center">
-  <h1>🌲 Aile Hekimliği Paneli</h1>
-  <div class="small">Devam etmek için Google ile giriş yap</div>
-  <button onclick="login()">Google ile Giriş Yap</button>
-  <div class="small">UID: <span id="uid"></span></div>
-</div>
-
-<div id="app" class="hidden">
-  <h1>🌲 Aile Hekimliği Paneli</h1>
-  <div class="panel">
-    <div class="small">
-      Giriş başarılı ✅  
-      <br>Şimdi UID’yi bana yaz, paneli tamamen sana kilitleyelim 🔒
-    </div>
+<div class="panel">
+  <div class="row">
+    <div class="col"><input id="adsoyad" placeholder="Ad Soyad"></div>
+    <div class="col"><input id="tcno" placeholder="TC"></div>
   </div>
+  <div id="kats"></div>
+  <button onclick="ekle()">Kaydet</button>
 </div>
 
+<div class="panel">
+  <div id="list">Yükleniyor…</div>
+</div>
 </body>
 </html>
