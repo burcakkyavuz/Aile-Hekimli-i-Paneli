@@ -12,6 +12,7 @@
   --panel:#10271c;
   --card:#153424;
   --accent:#4caf50;
+  --accent2:#2e7d32;
   --text:#f4fff6;
   --muted:#a7c9b0;
   --danger:#ff6b6b;
@@ -52,7 +53,7 @@ input:focus,select:focus,textarea:focus{
 }
 textarea{min-height:70px;resize:vertical}
 button{
-  background:linear-gradient(135deg,#4caf50,#2e7d32);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
   border:none;
   font-weight:700;
   cursor:pointer;
@@ -88,21 +89,45 @@ button:active{transform:translateY(1px)}
   padding:10px;
   margin-top:10px;
   border:1px solid rgba(255,255,255,0.06);
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
 }
+.card-main{min-width:0}
 .bullets{margin-top:6px}
 .bullets div{margin:2px 0;color:var(--text)}
 hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
+.btn-danger{
+  width:auto;
+  padding:8px 12px;
+  background:rgba(255,107,107,0.14);
+  color:#ffd3d3;
+  border:1px solid rgba(255,107,107,0.5);
+  border-radius:999px;
+  font-weight:700;
+}
+.actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.pill{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  background:rgba(76,175,80,0.18);
+  border:1px solid rgba(76,175,80,0.5);
+  color:var(--text);
+  margin-top:6px;
+}
 </style>
 
-<!-- ✅ Firebase + Firestore (senin config) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy
+    getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+  // ✅ Senin config (aynı)
   const firebaseConfig = {
-    apiKey: "AIzaSyDhRWEiA-rrpuazRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU".replace("RWEiA-rrpuazRWEiA-rrpuazR", "DhRWEiA-rrpuazR"), /* sadece güvenli kopya; değer aynı kalır */
+    apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
     authDomain: "aile-hekimligi-paneli.firebaseapp.com",
     projectId: "aile-hekimligi-paneli",
     storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
@@ -114,24 +139,28 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
   const db = getFirestore(app);
 
   const ILK4 = new Set(["Hipertansiyon","DM","KVR","Obezite"]);
-
   const KATEGORILER = [
-    "Hipertansiyon",
-    "DM",
-    "KVR",
-    "Obezite",
-    "Yaşlı İzlem",
-    "KAH İzlem",
-    "İnme İzlem",
-    "KBH İzlem",
-    "KOAH İzlem",
-    "Astım İzlem"
+    "Hipertansiyon","DM","KVR","Obezite",
+    "Yaşlı İzlem","KAH İzlem","İnme İzlem","KBH İzlem","KOAH İzlem","Astım İzlem"
   ];
+
+  let ALL_ROWS = []; // Firestore’dan gelen tüm kayıtlar (id dahil)
 
   function esc(s){
     return String(s ?? "").replace(/[&<>\"']/g, c=>({
       "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
     }[c]));
+  }
+
+  function normalizeKategoriler(r){
+    // Yeni model: r.kategoriler (array)
+    if(Array.isArray(r.kategoriler)) return r.kategoriler;
+
+    // Eski sade kayıtlar: r.kategori + r.hyp
+    if(r.kategori){
+      return [{ kategori:r.kategori, altkategori:"", hyp:r.hyp || "" }];
+    }
+    return [];
   }
 
   function buildKategoriUI(){
@@ -173,7 +202,6 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
       hyp.placeholder = "HYP tarihi (örn: 2025-02-11)";
       hyp.className = "cat-hyp";
       hyp.dataset.name = name;
-
       fields.appendChild(hyp);
 
       if(ILK4.has(name)){
@@ -209,6 +237,109 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
     });
   }
 
+  function buildFilterUI(){
+    const fKat = document.getElementById("fKategori");
+    fKat.innerHTML = `<option value="">Kategori (filtre)</option>` + KATEGORILER.map(k=>`<option>${k}</option>`).join("");
+
+    // filtre değişince otomatik uygula
+    ["fAd","fTc","fKategori","fAlt"].forEach(id=>{
+      document.getElementById(id).addEventListener("input", applyFilters);
+      document.getElementById(id).addEventListener("change", applyFilters);
+    });
+  }
+
+  function applyFilters(){
+    const qAd = document.getElementById("fAd").value.trim().toLowerCase();
+    const qTc = document.getElementById("fTc").value.trim();
+    const qKat = document.getElementById("fKategori").value;
+    const qAlt = document.getElementById("fAlt").value;
+
+    let rows = ALL_ROWS.slice();
+
+    if(qAd){
+      rows = rows.filter(x => (x.ad || "").toLowerCase().includes(qAd));
+    }
+    if(qTc){
+      rows = rows.filter(x => (x.tc || "").includes(qTc));
+    }
+    if(qKat){
+      rows = rows.filter(x => (x.kategoriler || []).some(k => k.kategori === qKat));
+    }
+    if(qAlt){
+      rows = rows.filter(x => (x.kategoriler || []).some(k => (k.altkategori || "") === qAlt));
+    }
+
+    renderList(rows);
+  }
+
+  function renderList(rows){
+    const list = document.getElementById("list");
+
+    if(!rows.length){
+      list.innerHTML = "<div class='small'>Filtreye göre kayıt bulunamadı.</div>";
+      return;
+    }
+
+    list.innerHTML = "";
+    rows.forEach(r=>{
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const main = document.createElement("div");
+      main.className = "card-main";
+
+      const bullets = (r.kategoriler || []).map(k=>{
+        let line = k.kategori || "";
+        if(k.altkategori) line += " – " + k.altkategori;
+        if(k.hyp) line += " – HYP: " + k.hyp;
+        return `<div>• ${esc(line)}</div>`;
+      }).join("");
+
+      main.innerHTML = `
+        <b>${esc(r.ad)}</b><br>
+        <span class="small">TC: ${esc(r.tc || "")}</span>
+        <div class="bullets">${bullets || "<div class='small'>Kategori yok</div>"}</div>
+        ${r.not ? `<hr class="sep"><div class="small">${esc(r.not)}</div>` : ""}
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.innerHTML = `<button class="btn-danger" onclick="sil('${r._id}')">Sil</button>`;
+
+      card.appendChild(main);
+      card.appendChild(actions);
+      list.appendChild(card);
+    });
+
+    // küçük sayım
+    const count = document.getElementById("countPill");
+    count.textContent = `${rows.length} kayıt`;
+  }
+
+  async function refreshFromFirestore(){
+    document.getElementById("list").innerHTML = "Yükleniyor...";
+    document.getElementById("countPill").textContent = "…";
+
+    const q = query(collection(db, "patients"), orderBy("createdAt","desc"));
+    const snap = await getDocs(q);
+
+    const arr = [];
+    snap.forEach(d=>{
+      const r = d.data() || {};
+      arr.push({
+        _id: d.id,
+        ad: r.ad || "",
+        tc: r.tc || "",
+        not: r.not || "",
+        createdAt: r.createdAt || null,
+        kategoriler: normalizeKategoriler(r)
+      });
+    });
+
+    ALL_ROWS = arr;
+    applyFilters();
+  }
+
   async function ekle(){
     const ad = document.getElementById("ad").value.trim();
     const tc = document.getElementById("tc").value.trim();
@@ -228,15 +359,10 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
         const alt = altEl ? altEl.value : "";
 
         if(ILK4.has(name) && !alt){
-          alert(name + " için Tarama/İzlem seçmelisin.");
-          throw new Error("ALT_REQUIRED");
+          throw new Error(name + " için Tarama/İzlem seçmelisin.");
         }
 
-        selected.push({
-          kategori: name,
-          altkategori: alt,
-          hyp: hyp
-        });
+        selected.push({ kategori:name, altkategori:alt, hyp:hyp });
       }
     });
 
@@ -245,13 +371,17 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
       return;
     }
 
-    await addDoc(collection(db, "patients"), {
-      ad,
-      tc,
-      kategoriler: selected,   // ✅ yeni çoklu kategori alanı
-      not,
-      createdAt: new Date()
-    });
+    try{
+      await addDoc(collection(db, "patients"), {
+        ad, tc,
+        kategoriler: selected,
+        not,
+        createdAt: new Date()
+      });
+    }catch(e){
+      alert(e?.message || "Kayıt eklenemedi.");
+      return;
+    }
 
     // temizle
     document.getElementById("ad").value = "";
@@ -262,62 +392,39 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
     document.querySelectorAll(".cat-hyp").forEach(i=> i.value="");
     document.querySelectorAll(".cat-alt").forEach(s=> s.value="");
 
-    await listele();
+    await refreshFromFirestore();
   }
 
-  async function listele(){
-    const list = document.getElementById("list");
-    list.innerHTML = "Yükleniyor...";
-
-    const q = query(collection(db, "patients"), orderBy("createdAt","desc"));
-    const snap = await getDocs(q);
-
-    if(snap.empty){
-      list.innerHTML = "Kayıt yok";
-      return;
-    }
-
-    list.innerHTML = "";
-    snap.forEach(d=>{
-      const r = d.data();
-      const card = document.createElement("div");
-      card.className = "card";
-
-      // Eski sade kayıtlar (kategori string) varsa da gösterelim
-      const kats = Array.isArray(r.kategoriler) ? r.kategoriler : (
-        r.kategori ? [{ kategori:r.kategori, altkategori:"", hyp:r.hyp || "" }] : []
-      );
-
-      const bullets = kats.map(k=>{
-        let line = k.kategori || "";
-        if(k.altkategori) line += " – " + k.altkategori;
-        if(k.hyp) line += " – HYP: " + k.hyp;
-        return `<div>• ${esc(line)}</div>`;
-      }).join("");
-
-      card.innerHTML = `
-        <b>${esc(r.ad)}</b><br>
-        <span class="small">TC: ${esc(r.tc || "")}</span>
-        <div class="bullets">${bullets || "<div class='small'>Kategori yok</div>"}</div>
-        ${r.not ? `<hr class="sep"><div class="small">${esc(r.not)}</div>` : ""}
-      `;
-      list.appendChild(card);
-    });
+  async function sil(id){
+    if(!confirm("Bu kaydı silmek istiyor musun?")) return;
+    await deleteDoc(doc(db, "patients", id));
+    await refreshFromFirestore();
   }
 
-  // Buton onclick için global yap
+  function filtreTemizle(){
+    document.getElementById("fAd").value = "";
+    document.getElementById("fTc").value = "";
+    document.getElementById("fKategori").value = "";
+    document.getElementById("fAlt").value = "";
+    applyFilters();
+  }
+
+  // HTML onclick için global
   window.ekle = ekle;
+  window.sil = sil;
+  window.filtreTemizle = filtreTemizle;
 
   window.addEventListener("load", async ()=>{
     buildKategoriUI();
-    await listele();
+    buildFilterUI();
+    await refreshFromFirestore();
   });
 </script>
 </head>
 
 <body>
   <h1>🌲 Aile Hekimliği Paneli</h1>
-  <div class="small">Bu tur: Çoklu kategori + Tarama/İzlem + HYP (Firebase senkron ✅)</div>
+  <div class="small">Bu tur: Filtreleme + Silme (Firebase senkron ✅)</div>
 
   <div class="panel">
     <div class="row">
@@ -334,8 +441,38 @@ hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
   </div>
 
   <div class="panel">
-    <div class="small">Kayıtlar</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="small">Kayıtlar</div>
+      <div id="countPill" class="pill">…</div>
+    </div>
+
+    <div class="row">
+      <div class="col"><input id="fAd" placeholder="İsimde ara"></div>
+      <div class="col"><input id="fTc" placeholder="TC'de ara"></div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <select id="fKategori">
+          <option value="">Kategori (filtre)</option>
+        </select>
+      </div>
+      <div class="col">
+        <select id="fAlt">
+          <option value="">Alt kategori (Tarama/İzlem)</option>
+          <option value="Tarama">Tarama</option>
+          <option value="İzlem">İzlem</option>
+        </select>
+      </div>
+    </div>
+
+    <button onclick="filtreTemizle()" style="margin-top:6px;background:transparent;border:1px solid rgba(255,255,255,0.12)">Filtreleri temizle</button>
+
     <div id="list">Yükleniyor...</div>
+  </div>
+
+  <div class="small" style="margin-top:10px;">
+    Mini güvenlik notu: Bu veri artık bulutta. Bir sonraki adımda Firestore kurallarını sadece sana özel kilitleyelim. 🔒
   </div>
 </body>
 </html>
