@@ -6,6 +6,23 @@
   <title>Aile Hekimliği Paneli</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1f16">
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
+    authDomain: "aile-hekimligi-paneli.firebaseapp.com",
+    projectId: "aile-hekimligi-paneli",
+    storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
+    messagingSenderId: "661070000720",
+    appId: "1:661070000720:web:7e657b58ba337f3ef55755"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+</script>
 
   <style>
     :root{
