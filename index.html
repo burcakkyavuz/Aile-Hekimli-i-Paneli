@@ -59,7 +59,7 @@ button{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
-  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
+  getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
   getFirestore 
@@ -83,7 +83,7 @@ const db = getFirestore(app);
 const ALLOWED_UID = "hguCQh6k7jPEcrwMT2kv1GsiZcj2";
 
 window.login = async ()=>{
-  await signInWithPopup(auth, provider);
+  await signInWithRedirect(auth, provider);
 };
 
 onAuthStateChanged(auth, user=>{
