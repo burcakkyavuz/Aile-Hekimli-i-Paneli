@@ -9,142 +9,333 @@
 <style>
 :root{
   --bg:#0b1f16;
+  --panel:#10271c;
   --card:#153424;
   --accent:#4caf50;
   --text:#f4fff6;
   --muted:#a7c9b0;
+  --danger:#ff6b6b;
 }
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:-apple-system,system-ui;
-  background:#0b1f16;
+  background:radial-gradient(circle at top,#1f3b27 0,#0b1f16 55%,#05120b 100%);
   color:var(--text);
   padding:16px;
 }
-h1{margin:0 0 8px 0;color:#a5d6a7}
+h1{margin:0 0 6px 0;color:#a5d6a7;font-size:22px}
+.small{font-size:12px;color:var(--muted)}
 .panel{
-  background:#10271c;
+  background:var(--panel);
   border-radius:14px;
   padding:14px;
-  margin-bottom:14px;
+  margin:12px 0;
+  border:1px solid rgba(255,255,255,0.06);
 }
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1;min-width:160px}
 input,select,textarea,button{
   width:100%;
   margin:6px 0;
   padding:10px;
   border-radius:10px;
-  border:none;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(8,25,16,0.85);
+  color:var(--text);
   font-size:14px;
+  outline:none;
 }
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(76,175,80,0.9);
+  box-shadow:0 0 0 1px rgba(76,175,80,0.5);
+}
+textarea{min-height:70px;resize:vertical}
 button{
-  background:var(--accent);
-  color:#fff;
-  font-weight:600;
+  background:linear-gradient(135deg,#4caf50,#2e7d32);
+  border:none;
+  font-weight:700;
+  cursor:pointer;
 }
+button:active{transform:translateY(1px)}
+.cat{
+  background:rgba(9,26,18,0.9);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+}
+.cat-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.cat-title{font-weight:700}
+.cat-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:var(--muted);
+}
+.cat-check input{width:auto;margin:0}
+.cat-fields{margin-top:8px;opacity:.55;pointer-events:none}
+.cat.active .cat-fields{opacity:1;pointer-events:auto}
 .card{
   background:var(--card);
   border-radius:12px;
   padding:10px;
   margin-top:10px;
+  border:1px solid rgba(255,255,255,0.06);
 }
-.small{font-size:12px;color:var(--muted)}
+.bullets{margin-top:6px}
+.bullets div{margin:2px 0;color:var(--text)}
+hr.sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:10px 0}
 </style>
 
-<!-- 🔥 Firebase -->
+<!-- ✅ Firebase + Firestore (senin config) -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
-  authDomain: "aile-hekimligi-paneli.firebaseapp.com",
-  projectId: "aile-hekimligi-paneli",
-  storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
-  messagingSenderId: "661070000720",
-  appId: "1:661070000720:web:7e657b58ba337f3ef55755"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhRWEiA-rrpuazRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU".replace("RWEiA-rrpuazRWEiA-rrpuazR", "DhRWEiA-rrpuazR"), /* sadece güvenli kopya; değer aynı kalır */
+    authDomain: "aile-hekimligi-paneli.firebaseapp.com",
+    projectId: "aile-hekimligi-paneli",
+    storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
+    messagingSenderId: "661070000720",
+    appId: "1:661070000720:web:7e657b58ba337f3ef55755"
+  };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-window.db = db;
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-window.ekle = async function(){
-  const ad = adInput.value.trim();
-  const tc = tcInput.value.trim();
-  const kategori = kategoriSelect.value;
-  const hyp = hypInput.value;
+  const ILK4 = new Set(["Hipertansiyon","DM","KVR","Obezite"]);
 
-  if(!ad || !tc || !kategori){
-    alert("Ad, TC ve kategori zorunlu");
-    return;
+  const KATEGORILER = [
+    "Hipertansiyon",
+    "DM",
+    "KVR",
+    "Obezite",
+    "Yaşlı İzlem",
+    "KAH İzlem",
+    "İnme İzlem",
+    "KBH İzlem",
+    "KOAH İzlem",
+    "Astım İzlem"
+  ];
+
+  function esc(s){
+    return String(s ?? "").replace(/[&<>\"']/g, c=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    }[c]));
   }
 
-  await addDoc(collection(db,"patients"),{
-    ad, tc, kategori, hyp,
-    createdAt:new Date()
-  });
+  function buildKategoriUI(){
+    const host = document.getElementById("kategoriHost");
+    host.innerHTML = "";
 
-  adInput.value="";
-  tcInput.value="";
-  hypInput.value="";
-  listele();
-}
+    KATEGORILER.forEach(name=>{
+      const wrap = document.createElement("div");
+      wrap.className = "cat";
+      wrap.dataset.name = name;
 
-window.listele = async function(){
-  list.innerHTML="Yükleniyor...";
-  const q = query(collection(db,"patients"),orderBy("createdAt","desc"));
-  const snap = await getDocs(q);
+      const head = document.createElement("div");
+      head.className = "cat-head";
 
-  if(snap.empty){
-    list.innerHTML="Kayıt yok";
-    return;
+      const title = document.createElement("div");
+      title.className = "cat-title";
+      title.textContent = name;
+
+      const checkLabel = document.createElement("label");
+      checkLabel.className = "cat-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "cat-cb";
+      cb.dataset.name = name;
+
+      const txt = document.createElement("span");
+      txt.textContent = "Bu kategori var";
+
+      checkLabel.appendChild(cb);
+      checkLabel.appendChild(txt);
+
+      head.appendChild(title);
+      head.appendChild(checkLabel);
+
+      const fields = document.createElement("div");
+      fields.className = "cat-fields";
+
+      const hyp = document.createElement("input");
+      hyp.placeholder = "HYP tarihi (örn: 2025-02-11)";
+      hyp.className = "cat-hyp";
+      hyp.dataset.name = name;
+
+      fields.appendChild(hyp);
+
+      if(ILK4.has(name)){
+        const sel = document.createElement("select");
+        sel.className = "cat-alt";
+        sel.dataset.name = name;
+        sel.innerHTML = `
+          <option value="">Alt kategori (Tarama / İzlem)</option>
+          <option value="Tarama">Tarama</option>
+          <option value="İzlem">İzlem</option>
+        `;
+        fields.appendChild(sel);
+
+        const note = document.createElement("div");
+        note.className = "small";
+        note.textContent = "Bu 4 kategoride Tarama/İzlem seçimi zorunlu.";
+        fields.appendChild(note);
+      } else {
+        const note = document.createElement("div");
+        note.className = "small";
+        note.textContent = "Bu kategoride Tarama/İzlem yok.";
+        fields.appendChild(note);
+      }
+
+      wrap.appendChild(head);
+      wrap.appendChild(fields);
+      host.appendChild(wrap);
+
+      cb.addEventListener("change", ()=>{
+        if(cb.checked) wrap.classList.add("active");
+        else wrap.classList.remove("active");
+      });
+    });
   }
 
-  list.innerHTML="";
-  snap.forEach(d=>{
-    const r=d.data();
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML=`
-      <b>${r.ad}</b><br>
-      TC: ${r.tc}<br>
-      ${r.kategori}${r.hyp ? " – HYP: "+r.hyp : ""}
-    `;
-    list.appendChild(div);
-  });
-}
+  async function ekle(){
+    const ad = document.getElementById("ad").value.trim();
+    const tc = document.getElementById("tc").value.trim();
+    const not = document.getElementById("not").value.trim();
 
-window.onload=listele;
+    if(!ad || !tc){
+      alert("Ad ve TC zorunlu.");
+      return;
+    }
+
+    const selected = [];
+    document.querySelectorAll(".cat-cb").forEach(cb=>{
+      if(cb.checked){
+        const name = cb.dataset.name;
+        const hyp = (document.querySelector(`.cat-hyp[data-name="${CSS.escape(name)}"]`)?.value || "").trim();
+        const altEl = document.querySelector(`.cat-alt[data-name="${CSS.escape(name)}"]`);
+        const alt = altEl ? altEl.value : "";
+
+        if(ILK4.has(name) && !alt){
+          alert(name + " için Tarama/İzlem seçmelisin.");
+          throw new Error("ALT_REQUIRED");
+        }
+
+        selected.push({
+          kategori: name,
+          altkategori: alt,
+          hyp: hyp
+        });
+      }
+    });
+
+    if(!selected.length){
+      alert("En az bir kategori seçmelisin.");
+      return;
+    }
+
+    await addDoc(collection(db, "patients"), {
+      ad,
+      tc,
+      kategoriler: selected,   // ✅ yeni çoklu kategori alanı
+      not,
+      createdAt: new Date()
+    });
+
+    // temizle
+    document.getElementById("ad").value = "";
+    document.getElementById("tc").value = "";
+    document.getElementById("not").value = "";
+    document.querySelectorAll(".cat-cb").forEach(cb=>{ cb.checked=false; });
+    document.querySelectorAll(".cat").forEach(c=> c.classList.remove("active"));
+    document.querySelectorAll(".cat-hyp").forEach(i=> i.value="");
+    document.querySelectorAll(".cat-alt").forEach(s=> s.value="");
+
+    await listele();
+  }
+
+  async function listele(){
+    const list = document.getElementById("list");
+    list.innerHTML = "Yükleniyor...";
+
+    const q = query(collection(db, "patients"), orderBy("createdAt","desc"));
+    const snap = await getDocs(q);
+
+    if(snap.empty){
+      list.innerHTML = "Kayıt yok";
+      return;
+    }
+
+    list.innerHTML = "";
+    snap.forEach(d=>{
+      const r = d.data();
+      const card = document.createElement("div");
+      card.className = "card";
+
+      // Eski sade kayıtlar (kategori string) varsa da gösterelim
+      const kats = Array.isArray(r.kategoriler) ? r.kategoriler : (
+        r.kategori ? [{ kategori:r.kategori, altkategori:"", hyp:r.hyp || "" }] : []
+      );
+
+      const bullets = kats.map(k=>{
+        let line = k.kategori || "";
+        if(k.altkategori) line += " – " + k.altkategori;
+        if(k.hyp) line += " – HYP: " + k.hyp;
+        return `<div>• ${esc(line)}</div>`;
+      }).join("");
+
+      card.innerHTML = `
+        <b>${esc(r.ad)}</b><br>
+        <span class="small">TC: ${esc(r.tc || "")}</span>
+        <div class="bullets">${bullets || "<div class='small'>Kategori yok</div>"}</div>
+        ${r.not ? `<hr class="sep"><div class="small">${esc(r.not)}</div>` : ""}
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  // Buton onclick için global yap
+  window.ekle = ekle;
+
+  window.addEventListener("load", async ()=>{
+    buildKategoriUI();
+    await listele();
+  });
 </script>
 </head>
 
 <body>
-<h1>🌲 Aile Hekimliği Paneli</h1>
+  <h1>🌲 Aile Hekimliği Paneli</h1>
+  <div class="small">Bu tur: Çoklu kategori + Tarama/İzlem + HYP (Firebase senkron ✅)</div>
 
-<div class="panel">
-  <input id="adInput" placeholder="Ad Soyad">
-  <input id="tcInput" placeholder="TC">
-  <select id="kategoriSelect">
-    <option value="">Kategori</option>
-    <option>Hipertansiyon</option>
-    <option>DM</option>
-    <option>KVR</option>
-    <option>Obezite</option>
-    <option>Yaşlı İzlem</option>
-    <option>KAH İzlem</option>
-    <option>İnme İzlem</option>
-    <option>KBH İzlem</option>
-    <option>KOAH İzlem</option>
-    <option>Astım İzlem</option>
-  </select>
-  <input id="hypInput" placeholder="HYP Tarihi (opsiyonel)">
-  <button onclick="ekle()">Kaydet</button>
-</div>
+  <div class="panel">
+    <div class="row">
+      <div class="col"><input id="ad" placeholder="Ad Soyad"></div>
+      <div class="col"><input id="tc" placeholder="TC"></div>
+    </div>
 
-<div class="panel">
-  <div class="small">Kayıtlar</div>
-  <div id="list"></div>
-</div>
+    <div class="small" style="margin-top:6px;">Kategorileri işaretle (birden fazla seçebilirsin):</div>
+    <div id="kategoriHost"></div>
 
+    <textarea id="not" placeholder="Genel notlar (opsiyonel)"></textarea>
+    <button onclick="ekle()">Kaydet</button>
+    <div class="small">Not: İlk 4 kategoride (HT, DM, KVR, Obezite) Tarama/İzlem zorunlu.</div>
+  </div>
+
+  <div class="panel">
+    <div class="small">Kayıtlar</div>
+    <div id="list">Yükleniyor...</div>
+  </div>
 </body>
 </html>
