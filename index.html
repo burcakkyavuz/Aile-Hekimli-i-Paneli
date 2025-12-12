@@ -80,7 +80,7 @@ const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
 
 // 🔐 SADECE SENİN GOOGLE UID
-const ALLOWED_UID = null; // birazdan dolduracağız
+const ALLOWED_UID = "hguCQh6k7jPEcrwMT2kv1GsiZcj2";
 
 window.login = async ()=>{
   await signInWithPopup(auth, provider);
@@ -93,12 +93,16 @@ onAuthStateChanged(auth, user=>{
     return;
   }
 
-  // UID'yi geçici olarak gösterelim
-  document.getElementById("uid").textContent = user.uid;
+  if(user.uid !== ALLOWED_UID){
+    alert("Bu hesaba yetki verilmedi.");
+    auth.signOut();
+    return;
+  }
 
   document.getElementById("login").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
 });
+
 </script>
 </head>
 
