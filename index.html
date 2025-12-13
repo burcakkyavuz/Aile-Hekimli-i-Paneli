@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aile Hekimliği</title>
 
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1f3b27">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +14,7 @@
 :root{
   --bg:#1f3b27;
   --panel:#2a4a33;
-  --card:#f5f1e8;   /* bej/krem */
+  --card:#f5f1e8;
   --accent:#4caf50;
   --accent2:#2e7d32;
   --text:#0b1f16;
@@ -30,11 +29,7 @@ body{
   color:white;
   padding:16px;
 }
-h1{
-  margin:0 0 12px 0;
-  font-size:22px;
-  letter-spacing:.3px;
-}
+h1{margin:0 0 12px 0;font-size:22px}
 .panel{
   background:var(--panel);
   border-radius:22px;
@@ -42,9 +37,9 @@ h1{
   margin:14px 0;
 }
 .row{display:flex;gap:10px;flex-wrap:wrap}
-.col{flex:1;min-width:150px}
+.col{flex:1;min-width:140px}
 
-input,select,textarea{
+input,select{
   width:100%;
   padding:12px;
   border-radius:14px;
@@ -64,13 +59,22 @@ button{
   font-weight:700;
   font-size:16px;
 }
-.cat{
-  background:rgba(255,255,255,.08);
-  border-radius:16px;
-  padding:12px;
-  margin:10px 0;
+.cat-card{
+  background:var(--card);
+  color:var(--text);
+  border-radius:18px;
+  padding:14px;
+  margin-top:10px;
+  position:relative;
 }
-.cat label{font-weight:600}
+.cat-title{font-weight:700;margin-bottom:6px}
+.remove{
+  position:absolute;
+  top:10px;right:12px;
+  cursor:pointer;
+  color:var(--danger);
+  font-size:18px;
+}
 .card{
   background:var(--card);
   color:var(--text);
@@ -89,10 +93,9 @@ button{
 }
 </style>
 
-<!-- Firebase (aynı senkron) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } 
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -110,56 +113,65 @@ const KATS=[
  "KBH İzlem","KOAH İzlem","Astım İzlem"
 ];
 const ILK4=["Hipertansiyon","DM","KVR","Obezite"];
+
+let eklenen=[]; // seçilen kategori kartları
 let ALL=[];
 
 window.onload=()=>{
-  const h=document.getElementById("kats");
-  KATS.forEach(k=>{
-    h.innerHTML+=`
-    <div class="cat">
-      <label><input type="checkbox" data-k="${k}"> ${k}</label>
-      ${ILK4.includes(k)?`
-        <select data-a="${k}">
+  const s=document.getElementById("katSec");
+  KATS.forEach(k=>s.innerHTML+=`<option>${k}</option>`);
+  load();
+};
+
+window.katEkle=()=>{
+  const k=katSec.value;
+  if(!k || eklenen.some(x=>x.kategori===k)) return;
+  const obj={kategori:k,alt:"",hyp:""};
+  eklenen.push(obj);
+  renderCats();
+};
+
+function renderCats(){
+  cards.innerHTML="";
+  eklenen.forEach((x,i)=>{
+    cards.innerHTML+=`
+    <div class="cat-card">
+      <div class="remove" onclick="kaldir(${i})">🗑️</div>
+      <div class="cat-title">${x.kategori}</div>
+      ${ILK4.includes(x.kategori)?`
+        <select onchange="eklenen[${i}].alt=this.value">
           <option value="">Tarama / İzlem</option>
           <option>Tarama</option>
           <option>İzlem</option>
         </select>`:""}
-      <input placeholder="HYP tarihi" data-h="${k}">
+      <input placeholder="HYP tarihi" oninput="eklenen[${i}].hyp=this.value">
     </div>`;
   });
-  load();
-};
-
-async function ekle(){
-  if(!ad.value||!tc.value) return alert("Ad ve TC zorunlu");
-  const ks=[];
-  document.querySelectorAll("[data-k]").forEach(c=>{
-    if(c.checked){
-      const k=c.dataset.k;
-      const a=document.querySelector(`[data-a="${k}"]`)?.value||"";
-      if(ILK4.includes(k)&&!a) return alert(k+" için Tarama/İzlem");
-      ks.push({kategori:k,alt:a,hyp:document.querySelector(`[data-h="${k}"]`).value});
-    }
-  });
-  if(!ks.length) return alert("Kategori seç");
-  await addDoc(collection(db,"patients"),{
-    ad:ad.value, tc:tc.value, kategoriler:ks, createdAt:new Date()
-  });
-  load();
 }
+window.kaldir=i=>{eklenen.splice(i,1);renderCats();};
+
+window.ekle=async ()=>{
+  if(!ad.value||!tc.value) return alert("Ad ve TC zorunlu");
+  if(!eklenen.length) return alert("Kategori ekle");
+  for(const k of eklenen){
+    if(ILK4.includes(k.kategori)&&!k.alt) return alert(k.kategori+" için Tarama/İzlem");
+  }
+  await addDoc(collection(db,"patients"),{
+    ad:ad.value, tc:tc.value,
+    kategoriler:eklenen,
+    createdAt:new Date()
+  });
+  eklenen=[];renderCats();load();
+};
 
 async function load(){
   const q=query(collection(db,"patients"),orderBy("createdAt","desc"));
   const s=await getDocs(q);
-  ALL=[];
-  s.forEach(d=>ALL.push({...d.data(),id:d.id}));
+  ALL=[]; s.forEach(d=>ALL.push({...d.data(),id:d.id}));
   filtre();
 }
-
-function filtre(){
-  const fa=fad.value.toLowerCase();
-  const ft=ftc.value;
-  const fk=fkat.value;
+window.filtre=()=>{
+  const fa=fad.value.toLowerCase(), ft=ftc.value, fk=fkat.value;
   list.innerHTML="";
   ALL.filter(r=>
     (!fa||r.ad.toLowerCase().includes(fa)) &&
@@ -174,15 +186,12 @@ function filtre(){
       <button class="btn-danger" onclick="sil('${r.id}')">Sil</button>
     </div>`;
   });
-}
+};
 window.sil=async id=>{
   if(confirm("Silinsin mi?")){
-    await deleteDoc(doc(db,"patients",id));
-    load();
+    await deleteDoc(doc(db,"patients",id));load();
   }
 };
-window.ekle=ekle;
-window.filtre=filtre;
 </script>
 </head>
 
@@ -194,7 +203,17 @@ window.filtre=filtre;
     <div class="col"><input id="ad" placeholder="Ad Soyad"></div>
     <div class="col"><input id="tc" placeholder="TC"></div>
   </div>
-  <div id="kats"></div>
+
+  <div class="row">
+    <div class="col">
+      <select id="katSec"><option value="">Kategori seç</option></select>
+    </div>
+    <div class="col">
+      <button onclick="katEkle()">+ Kategori Ekle</button>
+    </div>
+  </div>
+
+  <div id="cards"></div>
   <button onclick="ekle()">Kaydet</button>
 </div>
 
@@ -211,8 +230,6 @@ window.filtre=filtre;
   </div>
 </div>
 
-<div class="panel">
-  <div id="list">Yükleniyor…</div>
-</div>
+<div class="panel"><div id="list"></div></div>
 </body>
 </html>
