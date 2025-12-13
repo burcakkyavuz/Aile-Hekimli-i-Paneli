@@ -154,8 +154,9 @@ window.ekle=async ()=>{
   if(!ad.value||!tc.value) return alert("Ad ve TC zorunlu");
   if(!eklenen.length) return alert("Kategori ekle");
   for(const k of eklenen){
-    if(ILK4.includes(k.kategori)&&!k.alt) return alert(k.kategori+" için Tarama/İzlem");
-  }
+    if(ILK4.includes(k.kategori)&&!k.alt)
+  k.alt = "İzlem";
+
   await addDoc(collection(db,"patients"),{
     ad:ad.value, tc:tc.value,
     kategoriler:eklenen,
