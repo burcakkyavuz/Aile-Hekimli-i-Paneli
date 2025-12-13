@@ -123,11 +123,11 @@ function renderSelected(){
 }
 
 async function load(){
-  // createdAt serverTimestamp bazen gecikmeli geliyor → createdAtMs ile sıralıyoruz
-  const qq = query(collection(db,"patients"), orderBy("createdAtMs","desc"));
-  const s = await getDocs(qq);
+  const s = await getDocs(collection(db,"patients"));
   ALL = [];
-  s.forEach(d=>ALL.push({id:d.id, ...d.data()}));
+  s.forEach(d=>{
+    ALL.push({ id:d.id, ...d.data() });
+  });
   filterList();
 }
 
