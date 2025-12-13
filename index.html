@@ -9,7 +9,7 @@
 <style>
 :root{
   --bg:#0b1f16;
-  --panel:#10271c;
+  --bg2:#10271c;
   --card:#153424;
   --accent:#4caf50;
   --accent2:#2e7d32;
@@ -25,110 +25,151 @@ body{
   color:var(--text);
   padding:16px;
 }
-h1{color:#a5d6a7;font-size:22px}
+h1{
+  margin:0 0 8px 0;
+  color:#a5d6a7;
+  font-size:22px;
+}
 .small{font-size:12px;color:var(--muted)}
 .panel{
-  background:var(--panel);
-  border-radius:14px;
-  padding:14px;
-  margin:12px 0;
+  background:var(--bg2);
+  border-radius:16px;
+  padding:16px;
+  margin:14px 0;
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.col{flex:1;min-width:140px}
-input,select,button{
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1;min-width:160px}
+input,select,textarea,button{
   width:100%;
   margin:6px 0;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  background:#0e2318;
-  color:white;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(8,25,16,.9);
+  color:var(--text);
+  font-size:14px;
 }
+textarea{min-height:70px}
 button{
   background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
   font-weight:700;
+  cursor:pointer;
 }
-.cat{background:#0e2318;border-radius:10px;padding:8px;margin:6px 0}
+button:active{transform:translateY(1px)}
+.cat{
+  background:rgba(9,26,18,.9);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:12px;
+  margin:10px 0;
+}
+.cat label{display:flex;gap:8px;align-items:center;font-weight:600}
 .card{
   background:var(--card);
-  border-radius:12px;
-  padding:10px;
-  margin-top:10px;
+  border-radius:14px;
+  padding:14px;
+  margin-top:12px;
+  border:1px solid rgba(255,255,255,.08);
 }
 .btn-danger{
-  background:#5b1c1c;
-  color:#ffdede;
-  padding:6px 10px;
-  border-radius:8px;
+  background:rgba(255,107,107,.15);
+  color:#ffd3d3;
+  border:1px solid rgba(255,107,107,.5);
+  padding:8px 12px;
+  border-radius:999px;
+  margin-top:8px;
 }
 </style>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc,
+  query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
   authDomain: "aile-hekimligi-paneli.firebaseapp.com",
-  projectId: "aile-hekimligi-paneli"
+  projectId: "aile-hekimligi-paneli",
+  storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
+  messagingSenderId: "661070000720",
+  appId: "1:661070000720:web:7e657b58ba337f3ef55755"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const KATS=["Hipertansiyon","DM","KVR","Obezite","Yaşlı İzlem","KAH İzlem","İnme İzlem","KBH İzlem","KOAH İzlem","Astım İzlem"];
+const KATS=[
+ "Hipertansiyon","DM","KVR","Obezite",
+ "Yaşlı İzlem","KAH İzlem","İnme İzlem",
+ "KBH İzlem","KOAH İzlem","Astım İzlem"
+];
 const ILK4=["Hipertansiyon","DM","KVR","Obezite"];
 let ALL=[];
 
 window.onload=()=>{
-  const k=document.getElementById("kats");
-  KATS.forEach(x=>{
-    k.innerHTML+=`
+  const h=document.getElementById("kats");
+  KATS.forEach(k=>{
+    h.innerHTML+=`
     <div class="cat">
-      <label><input type="checkbox" data-k="${x}"> ${x}</label>
-      ${ILK4.includes(x)?`<select data-a="${x}"><option></option><option>Tarama</option><option>İzlem</option></select>`:""}
-      <input placeholder="HYP tarihi" data-h="${x}">
+      <label><input type="checkbox" data-k="${k}"> ${k}</label>
+      ${ILK4.includes(k)?`
+        <select data-a="${k}">
+          <option value="">Tarama / İzlem</option>
+          <option>Tarama</option>
+          <option>İzlem</option>
+        </select>`:""}
+      <input placeholder="HYP tarihi" data-h="${k}">
     </div>`;
   });
   load();
 };
 
 async function ekle(){
-  if(!ad.value||!tc.value) return alert("Ad ve TC");
-  const kats=[];
+  if(!ad.value||!tc.value) return alert("Ad ve TC zorunlu");
+  const ks=[];
   document.querySelectorAll("[data-k]").forEach(c=>{
     if(c.checked){
       const k=c.dataset.k;
       const a=document.querySelector(`[data-a="${k}"]`)?.value||"";
-      if(ILK4.includes(k)&&!a) return alert(k+" Tarama/İzlem");
-      kats.push({k,a,h:document.querySelector(`[data-h="${k}"]`).value});
+      if(ILK4.includes(k)&&!a) return alert(k+" için Tarama/İzlem");
+      ks.push({kategori:k,alt:a,hyp:document.querySelector(`[data-h="${k}"]`).value});
     }
   });
-  await addDoc(collection(db,"patients"),{ad:ad.value,tc:tc.value,kats});
+  if(!ks.length) return alert("Kategori seç");
+  await addDoc(collection(db,"patients"),{
+    ad:ad.value, tc:tc.value, kategoriler:ks, createdAt:new Date()
+  });
   load();
 }
 
 async function load(){
-  const s=await getDocs(collection(db,"patients"));
+  const q=query(collection(db,"patients"),orderBy("createdAt","desc"));
+  const s=await getDocs(q);
   ALL=[];
   s.forEach(d=>ALL.push({...d.data(),id:d.id}));
-  draw();
+  filtre();
 }
 
-function draw(){
-  const fAd=fad.value.toLowerCase();
-  const fTc=ftc.value;
-  const fK=fkat.value;
+function filtre(){
+  const fa=fad.value.toLowerCase();
+  const ft=ftc.value;
+  const fk=fkat.value;
   list.innerHTML="";
   ALL.filter(r=>
-    (!fAd||r.ad.toLowerCase().includes(fAd)) &&
-    (!fTc||r.tc.includes(fTc)) &&
-    (!fK||r.kats.some(k=>k.k===fK))
+    (!fa||r.ad.toLowerCase().includes(fa)) &&
+    (!ft||r.tc.includes(ft)) &&
+    (!fk||r.kategoriler.some(x=>x.kategori===fk))
   ).forEach(r=>{
     list.innerHTML+=`
     <div class="card">
-      <b>${r.ad}</b> – ${r.tc}
-      ${r.kats.map(k=>`<div>• ${k.k} ${k.a||""} ${k.h||""}</div>`).join("")}
+      <b>${r.ad}</b><br>
+      <span class="small">TC: ${r.tc}</span>
+      ${r.kategoriler.map(x=>`<div>• ${x.kategori} ${x.alt||""} ${x.hyp||""}</div>`).join("")}
       <button class="btn-danger" onclick="sil('${r.id}')">Sil</button>
     </div>`;
   });
@@ -141,7 +182,7 @@ window.sil=async id=>{
   }
 };
 window.ekle=ekle;
-window.filtre=draw;
+window.filtre=filtre;
 </script>
 </head>
 
@@ -171,7 +212,8 @@ window.filtre=draw;
 </div>
 
 <div class="panel">
-  <div id="list"></div>
+  <div id="list">Yükleniyor…</div>
 </div>
+
 </body>
 </html>
