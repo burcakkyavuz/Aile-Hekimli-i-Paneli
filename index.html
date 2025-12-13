@@ -8,81 +8,79 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1f3b27">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <style>
 :root{
   --forest:#1f3b27; --forest2:#0b1f16; --panel:#2a4a33;
-  --cream:#f5f1e8; --cream2:#efe6d8; --text:#0b1f16; --muted:#607066;
+  --cream:#f5f1e8; --cream2:#efe6d8; --text:#0b1f16;
   --accent:#2e7d32; --accent2:#4caf50; --danger:#b23b3b;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,system-ui;background:linear-gradient(180deg,var(--forest),var(--forest2));color:#fff;padding:16px;}
-  <div id="loginScreen" style="
-  position:fixed;
-  inset:0;
+body{
+  margin:0;
+  font-family:-apple-system,system-ui;
+  background:linear-gradient(180deg,var(--forest),var(--forest2));
+  color:#fff;
+  padding:16px;
+}
+h1{margin:0 0 10px 0}
+.panel{background:var(--panel);border-radius:22px;padding:16px;margin:14px 0;}
+input,select{
+  width:100%;padding:12px;border-radius:14px;border:none;
+  background:var(--cream);color:var(--text);margin:6px 0;
+}
+button{
+  width:100%;padding:14px;border-radius:999px;border:none;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  color:white;font-weight:800;cursor:pointer;
+}
+.tabbar{display:flex;gap:10px;margin-bottom:12px}
+.tab{
+  flex:1;padding:12px;border-radius:999px;
+  background:rgba(255,255,255,.12);text-align:center;
+  font-weight:800;cursor:pointer;
+}
+.tab.active{background:var(--cream);color:var(--text)}
+.cat-card{
+  background:var(--cream2);color:var(--text);
+  border-radius:18px;padding:14px;margin-top:10px;position:relative;
+}
+.remove{position:absolute;top:10px;right:12px;color:var(--danger);cursor:pointer}
+.list-card{
+  background:var(--cream);color:var(--text);
+  border-radius:20px;padding:14px;margin-top:12px;
+}
+.badge{
+  display:inline-block;margin:4px 6px 0 0;padding:3px 10px;
+  border-radius:999px;font-size:12px;
+  background:rgba(46,125,50,.12);
+}
+.btn-danger{
+  background:transparent;color:var(--danger);
+  border:1px solid var(--danger);
+  padding:8px;border-radius:999px;margin-top:8px;
+}
+</style>
+
+<!-- 🔒 ŞİFRE EKRANI -->
+<div id="loginScreen" style="
+  position:fixed;inset:0;
   background:linear-gradient(180deg,#1f3b27,#0b1f16);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-">
-  <div style="
-    background:#f5f1e8;
-    padding:24px;
-    border-radius:20px;
-    width:90%;
-    max-width:320px;
-    text-align:center;
-  ">
-    <h2 style="margin-top:0;color:#1f3b27">🔒 Giriş</h2>
-    <input
-      id="passwordInput"
-      type="password"
-      placeholder="Şifre"
-      style="
-        width:100%;
-        padding:12px;
-        border-radius:12px;
-        border:none;
-        margin-bottom:12px;
-      "
-    >
+  display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#f5f1e8;padding:24px;border-radius:20px;width:90%;max-width:320px;text-align:center">
+    <h2 style="color:#1f3b27">🔒 Giriş</h2>
+    <input id="passwordInput" type="password" placeholder="Şifre">
     <button onclick="checkPassword()">Giriş</button>
-    <div id="loginError" style="
-      color:#b23b3b;
-      font-size:13px;
-      margin-top:8px;
-      display:none;
-    ">
+    <div id="loginError" style="color:#b23b3b;font-size:13px;display:none;margin-top:8px">
       Şifre yanlış
     </div>
   </div>
 </div>
 
-h1{margin:0 0 10px 0;font-size:22px}
-.panel{background:var(--panel);border-radius:22px;padding:16px;margin:14px 0;}
-input,select{width:100%;padding:12px;border-radius:14px;border:none;background:var(--cream);color:var(--text);margin:6px 0;}
-button{width:100%;padding:14px;border-radius:999px;border:none;background:linear-gradient(135deg,var(--accent2),var(--accent));color:white;font-weight:800;cursor:pointer;}
-.tabbar{display:flex;gap:10px;margin-bottom:12px;}
-.tab{flex:1;padding:12px;border-radius:999px;background:rgba(255,255,255,.12);text-align:center;font-weight:800;cursor:pointer;}
-.tab.active{background:var(--cream);color:var(--text);}
-.cat-card{background:var(--cream2);color:var(--text);border-radius:18px;padding:14px;margin-top:10px;position:relative;}
-.remove{position:absolute;top:10px;right:12px;cursor:pointer;color:var(--danger);font-size:18px;user-select:none;}
-.list-card{background:var(--cream);color:var(--text);border-radius:20px;padding:14px;margin-top:12px;}
-.badge{display:inline-block;margin:4px 6px 0 0;padding:3px 10px;border-radius:999px;font-size:12px;background:rgba(46,125,50,.12);border:1px solid rgba(46,125,50,.35);}
-.small{font-size:12px;color:var(--muted)}
-.btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger);padding:8px 12px;border-radius:999px;margin-top:8px;font-weight:800;}
-.grid2{display:flex;gap:10px;flex-wrap:wrap}
-.grid2 > div{flex:1;min-width:140px}
-</style>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, deleteDoc, doc,
-  query, orderBy, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
@@ -93,287 +91,123 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const KATS=[
- "Hipertansiyon","DM","KVR","Obezite",
- "Yaşlı İzlem","KAH İzlem","İnme İzlem",
- "KBH İzlem","KOAH İzlem","Astım İzlem"
-];
+const KATS=["Hipertansiyon","DM","KVR","Obezite","Yaşlı İzlem","KAH İzlem","İnme İzlem","KBH İzlem","KOAH İzlem","Astım İzlem"];
 const ILK4=new Set(["Hipertansiyon","DM","KVR","Obezite"]);
 
-let selected=[]; // {kategori, alt, hyp}
-let ALL=[];
+let selected=[], ALL=[];
 
-const el = {};
-function q(id){ return document.getElementById(id); }
+const q=id=>document.getElementById(id);
 
-function showTab(which){
-  el.newTab.style.display = which==="new" ? "block" : "none";
-  el.listTab.style.display = which==="list" ? "block" : "none";
-  el.tNew.classList.toggle("active", which==="new");
-  el.tList.classList.toggle("active", which==="list");
+function showTab(t){
+  newTab.style.display=t==="new"?"block":"none";
+  listTab.style.display=t==="list"?"block":"none";
+  tNew.classList.toggle("active",t==="new");
+  tList.classList.toggle("active",t==="list");
 }
 
-function buildSelectOptions(selectEl, firstText){
-  selectEl.innerHTML = `<option value="">${firstText}</option>` + KATS.map(k=>`<option value="${k}">${k}</option>`).join("");
-}
+window.onload=async()=>{
+  katSec.innerHTML=`<option value="">Kategori seç</option>`+KATS.map(k=>`<option>${k}</option>`).join("");
+  fkat.innerHTML=`<option value="">Kategori</option>`+KATS.map(k=>`<option>${k}</option>`).join("");
+  await load();
+};
 
-function renderSelected(){
-  el.cards.innerHTML = "";
-  if(!selected.length){
-    el.cards.innerHTML = `<div class="small">Kategori seçip “+ Kategori Ekle” deyince kartlar burada çıkacak.</div>`;
-    return;
-  }
+window.katEkle=()=>{
+  if(!katSec.value||selected.some(x=>x.kategori===katSec.value))return;
+  selected.push({kategori:katSec.value,alt:"",hyp:""});
+  render();
+};
 
+function render(){
+  cards.innerHTML="";
   selected.forEach((x,i)=>{
-    const needsAlt = ILK4.has(x.kategori);
-    const wrap = document.createElement("div");
-    wrap.className = "cat-card";
-    wrap.dataset.idx = String(i);
-
-    const remove = document.createElement("div");
-    remove.className = "remove";
-    remove.textContent = "🗑️";
-    remove.title = "Kaldır";
-    remove.onclick = ()=>{ selected.splice(i,1); renderSelected(); };
-    wrap.appendChild(remove);
-
-    const title = document.createElement("div");
-    title.style.fontWeight="900";
-    title.style.marginBottom="6px";
-    title.textContent = x.kategori;
-    wrap.appendChild(title);
-
-    if(needsAlt){
-      const sel = document.createElement("select");
-      sel.innerHTML = `
-        <option value="">Tarama / İzlem</option>
-        <option value="Tarama">Tarama</option>
-        <option value="İzlem">İzlem</option>`;
-      sel.value = x.alt || "";
-      sel.onchange = (e)=>{ selected[i].alt = e.target.value; };
-      wrap.appendChild(sel);
-    }
-
-    const hyp = document.createElement("input");
-    hyp.placeholder = "HYP tarihi (örn: 2025-02-11)";
-    hyp.value = x.hyp || "";
-    hyp.oninput = (e)=>{ selected[i].hyp = e.target.value; };
-    wrap.appendChild(hyp);
-
-    el.cards.appendChild(wrap);
+    cards.innerHTML+=`
+    <div class="cat-card">
+      <div class="remove" onclick="selected.splice(${i},1);render()">🗑️</div>
+      <b>${x.kategori}</b>
+      ${ILK4.has(x.kategori)?`
+      <select onchange="selected[${i}].alt=this.value">
+        <option value="">Tarama / İzlem</option><option>Tarama</option><option>İzlem</option>
+      </select>`:""}
+      <input placeholder="HYP tarihi" oninput="selected[${i}].hyp=this.value">
+    </div>`;
   });
 }
+
+window.ekle=async()=>{
+  if(!ad.value||!tc.value||!selected.length)return alert("Eksik bilgi");
+  await addDoc(collection(db,"patients"),{
+    ad:ad.value,tc:tc.value,
+    kategoriler:selected.map(x=>({
+      kategori:x.kategori,
+      alt:ILK4.has(x.kategori)?(x.alt||"İzlem"):"",
+      hyp:x.hyp||""
+    }))
+  });
+  ad.value="";tc.value="";selected=[];render();
+  await load();showTab("list");
+};
 
 async function load(){
-  const s = await getDocs(collection(db,"patients"));
-  ALL = [];
-  s.forEach(d=>{
-    ALL.push({ id:d.id, ...d.data() });
+  const s=await getDocs(collection(db,"patients"));
+  ALL=[];s.forEach(d=>ALL.push({id:d.id,...d.data()}));
+  list.innerHTML="";
+  ALL.forEach(r=>{
+    list.innerHTML+=`
+    <div class="list-card">
+      <b>${r.ad}</b><br>TC: ${r.tc}
+      <div>${r.kategoriler.map(k=>`<span class="badge">${k.kategori}</span>`).join("")}</div>
+      <button class="btn-danger" onclick="sil('${r.id}')">Sil</button>
+    </div>`;
   });
-  filterList();
 }
 
-function filterList(){
-  const nameQ = (el.fad.value||"").trim().toLowerCase();
-  const tcQ = (el.ftc.value||"").trim();
-  const fk = (el.fkat.value||"").trim();
-
-  const filtered = ALL.filter(r=>{
-    const okName = !nameQ || (r.ad||"").toLowerCase().includes(nameQ);
-    const okTc = !tcQ || (r.tc||"").includes(tcQ);
-    const okKat = !fk || (r.kategoriler||[]).some(k=>k.kategori===fk);
-    return okName && okTc && okKat;
-  });
-
-  el.list.innerHTML = "";
-  if(!filtered.length){
-    el.list.innerHTML = `<div class="small">Kayıt yok / filtreye uyan yok.</div>`;
-    return;
+window.sil=async id=>{
+  if(confirm("Silinsin mi?")){
+    await deleteDoc(doc(db,"patients",id));
+    load();
   }
-
-  filtered.forEach(r=>{
-    const div = document.createElement("div");
-    div.className = "list-card";
-
-    div.innerHTML = `
-      <div style="font-weight:900;font-size:16px">${r.ad||""}</div>
-      <div class="small">TC: ${r.tc||""}</div>
-      <div style="margin-top:8px">
-        ${(r.kategoriler||[]).map(k=>{
-          const alt = k.alt ? ` • ${k.alt}` : "";
-          const hyp = k.hyp ? ` • ${k.hyp}` : "";
-          return `<span class="badge">${k.kategori}${alt}${hyp}</span>`;
-        }).join("")}
-      </div>
-    `;
-
-    const btn = document.createElement("button");
-    btn.className = "btn-danger";
-    btn.textContent = "Sil";
-    btn.onclick = async ()=>{
-      if(!confirm("Silinsin mi?")) return;
-      await deleteDoc(doc(db,"patients", r.id));
-      await load();
-    };
-    div.appendChild(btn);
-
-    el.list.appendChild(div);
-  });
-}
-
-async function savePatient(){
-  const ad = el.ad.value.trim();
-  const tc = el.tc.value.trim();
-  if(!ad || !tc) return alert("Ad ve TC zorunlu.");
-  if(!selected.length) return alert("En az 1 kategori eklemelisin.");
-
-  const kategoriler = selected.map(x=>({
-    kategori: x.kategori,
-    alt: ILK4.has(x.kategori) ? (x.alt || "İzlem") : "",
-    hyp: (x.hyp || "").trim()
-  }));
-
-  const nowMs = Date.now();
-
-  await addDoc(collection(db,"patients"),{
-    ad, tc,
-    kategoriler,
-    createdAt: serverTimestamp(),
-    createdAtMs: nowMs
-  });
-
-  // temizle + listeye geç
-  el.ad.value=""; el.tc.value=""; el.katSec.value="";
-  selected.length = 0;
-  renderSelected();
-
-  await load();
-  showTab("list");
-}
-
-function addCategory(){
-  const k = el.katSec.value;
-  if(!k) return;
-  if(selected.some(x=>x.kategori===k)) return;
-  selected.push({kategori:k, alt:"", hyp:""});
-  renderSelected();
-}
-
-window.addEventListener("load", async ()=>{
-  // element refs
-  ["tNew","tList","newTab","listTab","ad","tc","katSec","cards","saveBtn",
-   "fad","ftc","fkat","list","clearBtn","refreshBtn","addCatBtn"].forEach(id=>el[id]=q(id));
-
-  buildSelectOptions(el.katSec, "Kategori seç");
-  buildSelectOptions(el.fkat, "Kategori (filtre)");
-
-  el.tNew.onclick = ()=>showTab("new");
-  el.tList.onclick = ()=>showTab("list");
-  el.addCatBtn.onclick = addCategory;
-  el.saveBtn.onclick = savePatient;
-
-  el.fad.oninput = filterList;
-  el.ftc.oninput = filterList;
-  el.fkat.onchange = filterList;
-
-  el.clearBtn.onclick = ()=>{
-    el.fad.value=""; el.ftc.value=""; el.fkat.value="";
-    filterList();
-  };
-  el.refreshBtn.onclick = load;
-
-  renderSelected();
-  await load();
-});
+};
 </script>
-</head>
+
+<script>
+const APP_PASSWORD="asm2025"; // 👈 BURAYI DEĞİŞTİR
+
+function checkPassword(){
+  if(passwordInput.value===APP_PASSWORD){
+    loginScreen.style.display="none";
+    sessionStorage.setItem("ok","1");
+  }else loginError.style.display="block";
+}
+if(sessionStorage.getItem("ok")==="1"){
+  window.onload=()=>loginScreen.style.display="none";
+}
+</script>
 
 <body>
 <h1>🌲 Aile Hekimliği</h1>
 
 <div class="tabbar">
-  <div id="tNew" class="tab active">➕ Yeni Hasta</div>
-  <div id="tList" class="tab">📋 Hasta Listesi</div>
+  <div id="tNew" class="tab active" onclick="showTab('new')">➕ Yeni Hasta</div>
+  <div id="tList" class="tab" onclick="showTab('list')">📋 Hasta Listesi</div>
 </div>
 
 <div id="newTab">
   <div class="panel">
-    <div class="grid2">
-      <div><input id="ad" placeholder="Ad Soyad"></div>
-      <div><input id="tc" placeholder="TC"></div>
-    </div>
-
-    <div class="grid2">
-      <div><select id="katSec"></select></div>
-      <div><button id="addCatBtn" type="button">+ Kategori Ekle</button></div>
-    </div>
-
+    <input id="ad" placeholder="Ad Soyad">
+    <input id="tc" placeholder="TC">
+    <select id="katSec"></select>
+    <button onclick="katEkle()">+ Kategori Ekle</button>
     <div id="cards"></div>
-
-    <button id="saveBtn" type="button">Kaydet</button>
-    <div class="small" style="margin-top:8px">Not: İlk 4 kategoride Tarama/İzlem seçmezsen otomatik “İzlem” kaydedilir.</div>
+    <button onclick="ekle()">Kaydet</button>
   </div>
 </div>
 
 <div id="listTab" style="display:none">
   <div class="panel">
-    <div class="grid2">
-      <div><input id="fad" placeholder="İsim filtre"></div>
-      <div><input id="ftc" placeholder="TC filtre"></div>
-    </div>
     <select id="fkat"></select>
-
-    <div class="grid2" style="margin-top:6px">
-      <div><button id="clearBtn" type="button" style="background:rgba(255,255,255,.12)">Filtreleri temizle</button></div>
-      <div><button id="refreshBtn" type="button" style="background:rgba(255,255,255,.12)">Yenile</button></div>
-    </div>
-
-    <div id="list" style="margin-top:10px">Yükleniyor…</div>
+    <div id="list"></div>
   </div>
 </div>
 
 </body>
-  <!-- ŞİFRE KONTROL SCRIPTİ -->
-<script>
-const APP_PASSWORD = "1234"; // 👈 burayı değiştir
-
-function checkPassword(){
-  const val = document.getElementById("passwordInput").value;
-  if(val === APP_PASSWORD){
-    document.getElementById("loginScreen").style.display = "none";
-    sessionStorage.setItem("loggedIn","1");
-  }else{
-    document.getElementById("loginError").style.display = "block";
-  }
-}
-
-if(sessionStorage.getItem("loggedIn")==="1"){
-  document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("loginScreen").style.display="none";
-  });
-}
-</script>
-
-</body>
-<script>
-const APP_PASSWORD = "826747"; // 👈 BURAYI DEĞİŞTİR
-
-function checkPassword(){
-  const val = document.getElementById("passwordInput").value;
-  if(val === APP_PASSWORD){
-    document.getElementById("loginScreen").style.display = "none";
-    sessionStorage.setItem("loggedIn","1");
-  }else{
-    document.getElementById("loginError").style.display = "block";
-  }
-}
-
-// sayfa yenilense bile tekrar sormasın
-if(sessionStorage.getItem("loggedIn")==="1"){
-  document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("loginScreen").style.display="none";
-  });
-}
-</script>
-
 </html>
