@@ -3,101 +3,102 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aile Hekimliği Paneli</title>
-<meta name="theme-color" content="#0b1f16">
+<title>Aile Hekimliği</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3b27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <style>
 :root{
-  --bg:#0b1f16;
-  --bg2:#10271c;
-  --card:#153424;
+  --bg:#1f3b27;
+  --panel:#2a4a33;
+  --card:#f5f1e8;   /* bej/krem */
   --accent:#4caf50;
   --accent2:#2e7d32;
-  --text:#f4fff6;
-  --muted:#a7c9b0;
-  --danger:#ff6b6b;
+  --text:#0b1f16;
+  --muted:#5f6f65;
+  --danger:#b23b3b;
 }
 *{box-sizing:border-box}
 body{
   margin:0;
   font-family:-apple-system,system-ui;
-  background:radial-gradient(circle at top,#1f3b27 0,#0b1f16 55%,#05120b 100%);
-  color:var(--text);
+  background:linear-gradient(180deg,#1f3b27,#0b1f16);
+  color:white;
   padding:16px;
 }
 h1{
-  margin:0 0 8px 0;
-  color:#a5d6a7;
+  margin:0 0 12px 0;
   font-size:22px;
+  letter-spacing:.3px;
 }
-.small{font-size:12px;color:var(--muted)}
 .panel{
-  background:var(--bg2);
-  border-radius:16px;
+  background:var(--panel);
+  border-radius:22px;
   padding:16px;
   margin:14px 0;
-  border:1px solid rgba(255,255,255,0.08);
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
 .row{display:flex;gap:10px;flex-wrap:wrap}
-.col{flex:1;min-width:160px}
-input,select,textarea,button{
+.col{flex:1;min-width:150px}
+
+input,select,textarea{
   width:100%;
-  margin:6px 0;
   padding:12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.12);
-  background:rgba(8,25,16,.9);
-  color:var(--text);
-  font-size:14px;
-}
-textarea{min-height:70px}
-button{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border:none;
-  font-weight:700;
-  cursor:pointer;
-}
-button:active{transform:translateY(1px)}
-.cat{
-  background:rgba(9,26,18,.9);
-  border:1px solid rgba(255,255,255,.08);
   border-radius:14px;
+  border:none;
+  background:var(--card);
+  color:var(--text);
+  margin:6px 0;
+  font-size:15px;
+}
+button{
+  width:100%;
+  padding:14px;
+  border-radius:999px;
+  border:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:white;
+  font-weight:700;
+  font-size:16px;
+}
+.cat{
+  background:rgba(255,255,255,.08);
+  border-radius:16px;
   padding:12px;
   margin:10px 0;
 }
-.cat label{display:flex;gap:8px;align-items:center;font-weight:600}
+.cat label{font-weight:600}
 .card{
   background:var(--card);
-  border-radius:14px;
+  color:var(--text);
+  border-radius:20px;
   padding:14px;
   margin-top:12px;
-  border:1px solid rgba(255,255,255,.08);
 }
+.small{font-size:12px;color:var(--muted)}
 .btn-danger{
-  background:rgba(255,107,107,.15);
-  color:#ffd3d3;
-  border:1px solid rgba(255,107,107,.5);
+  background:transparent;
+  color:var(--danger);
+  border:1px solid var(--danger);
   padding:8px 12px;
   border-radius:999px;
   margin-top:8px;
 }
 </style>
 
+<!-- Firebase (aynı senkron) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, deleteDoc, doc,
-  query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDhRWEiA-rrpuazR_YnV7UmhQ-UiDeAHUU",
   authDomain: "aile-hekimligi-paneli.firebaseapp.com",
-  projectId: "aile-hekimligi-paneli",
-  storageBucket: "aile-hekimligi-paneli.firebasestorage.app",
-  messagingSenderId: "661070000720",
-  appId: "1:661070000720:web:7e657b58ba337f3ef55755"
+  projectId: "aile-hekimligi-paneli"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -174,7 +175,6 @@ function filtre(){
     </div>`;
   });
 }
-
 window.sil=async id=>{
   if(confirm("Silinsin mi?")){
     await deleteDoc(doc(db,"patients",id));
@@ -187,7 +187,7 @@ window.filtre=filtre;
 </head>
 
 <body>
-<h1>🌲 Aile Hekimliği Paneli</h1>
+<h1>🌲 Aile Hekimliği</h1>
 
 <div class="panel">
   <div class="row">
@@ -214,6 +214,5 @@ window.filtre=filtre;
 <div class="panel">
   <div id="list">Yükleniyor…</div>
 </div>
-
 </body>
 </html>
