@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Aile Hekimliği">
 <title>Aile Hekimliği</title>
 
-<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#1f3b27">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -17,7 +17,12 @@
 }
 *{box-sizing:border-box}
 body{
-<!-- 🔒 ŞİFRE EKRANI -->
+body{
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+  <!-- 🔒 ŞİFRE EKRANI -->
 <div id="loginScreen" style="
   position:fixed;
   inset:0;
