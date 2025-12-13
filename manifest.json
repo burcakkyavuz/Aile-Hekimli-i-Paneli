@@ -1,12 +1,13 @@
 {
   "name": "Aile Hekimliği",
   "short_name": "AileHek",
-  "start_url": "./",
+  "start_url": "/Aile-Hekimli-i-Paneli/",
+  "scope": "/Aile-Hekimli-i-Paneli/",
   "display": "standalone",
   "background_color": "#1f3b27",
   "theme_color": "#1f3b27",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/Aile-Hekimli-i-Paneli/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/Aile-Hekimli-i-Paneli/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
