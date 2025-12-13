@@ -31,15 +31,13 @@ body{
   color:#fff;
   padding:16px;
 }
-h1{margin:0 0 10px 0;font-size:22px;letter-spacing:.2px}
+h1{margin:0 0 10px 0;font-size:22px}
 .panel{
   background:var(--panel);
   border-radius:22px;
   padding:16px;
   margin:14px 0;
 }
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.col{flex:1;min-width:140px}
 input,select{
   width:100%;
   padding:12px;
@@ -48,7 +46,6 @@ input,select{
   background:var(--cream);
   color:var(--text);
   margin:6px 0;
-  font-size:15px;
 }
 button{
   width:100%;
@@ -58,17 +55,26 @@ button{
   background:linear-gradient(135deg,var(--accent2),var(--accent));
   color:white;
   font-weight:800;
-  font-size:16px;
   cursor:pointer;
 }
-button:active{transform:translateY(1px)}
-
-.chipbar{
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+.tabbar{
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
 }
-.hint{font-size:12px;color:rgba(255,255,255,.75)}
-.divider{height:1px;background:rgba(255,255,255,.12);margin:10px 0}
-
+.tab{
+  flex:1;
+  padding:12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.12);
+  text-align:center;
+  font-weight:700;
+  cursor:pointer;
+}
+.tab.active{
+  background:var(--cream);
+  color:var(--text);
+}
 .cat-card{
   background:var(--cream2);
   color:var(--text);
@@ -77,22 +83,28 @@ button:active{transform:translateY(1px)}
   margin-top:10px;
   position:relative;
 }
-.cat-title{font-weight:900;margin-bottom:6px}
 .remove{
   position:absolute;
   top:10px; right:12px;
   cursor:pointer;
   color:var(--danger);
   font-size:18px;
-  user-select:none;
 }
-
 .list-card{
   background:var(--cream);
   color:var(--text);
   border-radius:20px;
   padding:14px;
   margin-top:12px;
+}
+.badge{
+  display:inline-block;
+  margin:4px 6px 0 0;
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:12px;
+  background:rgba(46,125,50,.12);
+  border:1px solid rgba(46,125,50,.35);
 }
 .small{font-size:12px;color:var(--muted)}
 .btn-danger{
@@ -102,30 +114,6 @@ button:active{transform:translateY(1px)}
   padding:8px 12px;
   border-radius:999px;
   margin-top:8px;
-  font-weight:700;
-}
-.badges{margin-top:8px}
-.badge{
-  display:inline-block;
-  margin:3px 6px 0 0;
-  padding:3px 10px;
-  border-radius:999px;
-  font-size:12px;
-  background:rgba(46,125,50,.12);
-  border:1px solid rgba(46,125,50,.35);
-}
-.badge2{
-  background:rgba(31,59,39,.08);
-  border-color:rgba(31,59,39,.25);
-}
-.top-actions{
-  display:flex;gap:10px;flex-wrap:wrap;
-}
-.top-actions button{flex:1;min-width:140px}
-.btn-secondary{
-  background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.20);
-  font-weight:800;
 }
 </style>
 
@@ -145,218 +133,126 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const KATS = [
-  "Hipertansiyon","DM","KVR","Obezite",
-  "Yaşlı İzlem","KAH İzlem","İnme İzlem",
-  "KBH İzlem","KOAH İzlem","Astım İzlem"
+const KATS=[
+ "Hipertansiyon","DM","KVR","Obezite",
+ "Yaşlı İzlem","KAH İzlem","İnme İzlem",
+ "KBH İzlem","KOAH İzlem","Astım İzlem"
 ];
-const ILK4 = new Set(["Hipertansiyon","DM","KVR","Obezite"]);
+const ILK4=new Set(["Hipertansiyon","DM","KVR","Obezite"]);
 
-let selectedCats = []; // [{kategori, alt, hyp}]
-let ALL = [];          // tüm hastalar (firebase)
+let selected=[];
+let ALL=[];
 
-function $(id){ return document.getElementById(id); }
-
-window.onload = () => {
-  // Kategori dropdown’larını her açılışta yeniden kuruyoruz → “kategoriler silindi” hissi biter
-  const sel = $("katSec");
-  sel.innerHTML = `<option value="">Kategori seç</option>` + KATS.map(k=>`<option>${k}</option>`).join("");
-
-  const fsel = $("fkat");
-  fsel.innerHTML = `<option value="">Kategori (filtre)</option>` + KATS.map(k=>`<option>${k}</option>`).join("");
-
+window.onload=()=>{
+  katSec.innerHTML=`<option value="">Kategori seç</option>`+KATS.map(k=>`<option>${k}</option>`).join("");
+  fkat.innerHTML=`<option value="">Kategori</option>`+KATS.map(k=>`<option>${k}</option>`).join("");
   load();
 };
 
-window.katEkle = () => {
-  const k = $("katSec").value;
-  if(!k) return;
-  if(selectedCats.some(x => x.kategori === k)) return; // aynı kategori 2 kez eklenmesin
-  selectedCats.push({ kategori:k, alt:"", hyp:"" });
-  renderSelected();
+window.showTab=(id)=>{
+  newTab.style.display=id==="new"?"block":"none";
+  listTab.style.display=id==="list"?"block":"none";
+  tNew.classList.toggle("active",id==="new");
+  tList.classList.toggle("active",id==="list");
 };
 
-window.kaldir = (idx) => {
-  selectedCats.splice(idx, 1);
-  renderSelected();
+window.katEkle=()=>{
+  if(!katSec.value||selected.some(x=>x.kategori===katSec.value))return;
+  selected.push({kategori:katSec.value,alt:"",hyp:""});
+  renderSel();
 };
 
-function renderSelected(){
-  const host = $("cards");
-  host.innerHTML = "";
-  if(!selectedCats.length){
-    host.innerHTML = `<div class="hint">Kategori seçip “+ Kategori Ekle” deyince kartlar burada çıkacak.</div>`;
-    return;
-  }
+window.kaldir=i=>{selected.splice(i,1);renderSel();};
 
-  selectedCats.forEach((x,i) => {
-    const needsAlt = ILK4.has(x.kategori);
-
-    host.innerHTML += `
-      <div class="cat-card">
-        <div class="remove" title="Kaldır" onclick="kaldir(${i})">🗑️</div>
-        <div class="cat-title">${x.kategori}</div>
-
-        ${needsAlt ? `
-          <select onchange="selectedCats[${i}].alt=this.value">
-            <option value="">Tarama / İzlem</option>
-            <option ${x.alt==="Tarama"?"selected":""}>Tarama</option>
-            <option ${x.alt==="İzlem"?"selected":""}>İzlem</option>
-          </select>
-        ` : ``}
-
-        <input placeholder="HYP tarihi (örn: 2025-02-11)"
-               value="${x.hyp?.replaceAll('"','&quot;') || ""}"
-               oninput="selectedCats[${i}].hyp=this.value">
-      </div>
-    `;
+function renderSel(){
+  cards.innerHTML="";
+  selected.forEach((x,i)=>{
+    cards.innerHTML+=`
+    <div class="cat-card">
+      <div class="remove" onclick="kaldir(${i})">🗑️</div>
+      <b>${x.kategori}</b>
+      ${ILK4.has(x.kategori)?`
+      <select onchange="selected[${i}].alt=this.value">
+        <option value="">Tarama / İzlem</option>
+        <option>Tarama</option>
+        <option>İzlem</option>
+      </select>`:""}
+      <input placeholder="HYP tarihi" oninput="selected[${i}].hyp=this.value">
+    </div>`;
   });
 }
 
-window.ekle = async () => {
-  const ad = $("ad").value.trim();
-  const tc = $("tc").value.trim();
-  if(!ad || !tc) return alert("Ad ve TC zorunlu.");
-
-  if(!selectedCats.length) return alert("En az 1 kategori eklemelisin.");
-
-  // UX: İlk 4’te alt kategori boşsa otomatik İzlem yap (uyarı verme, akışı bozma)
-  const kategoriler = selectedCats.map(x => ({
-    kategori: x.kategori,
-    alt: ILK4.has(x.kategori) ? (x.alt || "İzlem") : "",
-    hyp: (x.hyp || "").trim()
+window.ekle=async()=>{
+  if(!ad.value||!tc.value)return alert("Ad ve TC zorunlu");
+  if(!selected.length)return alert("Kategori ekle");
+  const kategoriler=selected.map(x=>({
+    kategori:x.kategori,
+    alt:ILK4.has(x.kategori)?(x.alt||"İzlem"):"",
+    hyp:x.hyp||""
   }));
-
-  await addDoc(collection(db, "patients"), {
-    ad, tc, kategoriler,
-    createdAt: serverTimestamp()
+  await addDoc(collection(db,"patients"),{
+    ad:ad.value,tc:tc.value,kategoriler,createdAt:serverTimestamp()
   });
-
-  // temizle
-  $("ad").value = "";
-  $("tc").value = "";
-  $("katSec").value = "";
-  selectedCats = [];
-  renderSelected();
-
+  ad.value="";tc.value="";selected=[];renderSel();
   await load();
+  showTab("list");
 };
 
 async function load(){
-  const q = query(collection(db,"patients"), orderBy("createdAt","desc"));
-  const s = await getDocs(q);
-  ALL = [];
-  s.forEach(d => ALL.push({ id:d.id, ...d.data() }));
+  const q=query(collection(db,"patients"),orderBy("createdAt","desc"));
+  const s=await getDocs(q);
+  ALL=[];s.forEach(d=>ALL.push({...d.data(),id:d.id}));
   filtre();
 }
 
-window.filtre = () => {
-  const fa = $("fad").value.trim().toLowerCase();
-  const ft = $("ftc").value.trim();
-  const fk = $("fkat").value.trim();
-
-  const filtered = ALL.filter(r => {
-    const adOk = !fa || (r.ad||"").toLowerCase().includes(fa);
-    const tcOk = !ft || (r.tc||"").includes(ft);
-    const katOk = !fk || (r.kategoriler||[]).some(k => k.kategori === fk);
-    return adOk && tcOk && katOk;
+window.filtre=()=>{
+  const fk=fkat.value;
+  list.innerHTML="";
+  ALL.filter(r=>!fk||r.kategoriler.some(k=>k.kategori===fk))
+  .forEach(r=>{
+    list.innerHTML+=`
+    <div class="list-card">
+      <b>${r.ad}</b><br><span class="small">TC: ${r.tc}</span>
+      <div>${r.kategoriler.map(k=>`<span class="badge">${k.kategori} ${k.alt||""} ${k.hyp||""}</span>`).join("")}</div>
+      <button class="btn-danger" onclick="sil('${r.id}')">Sil</button>
+    </div>`;
   });
+};
 
-  const list = $("list");
-  list.innerHTML = "";
-
-  if(!filtered.length){
-    list.innerHTML = `<div class="hint">Eşleşen kayıt yok.</div>`;
-    return;
+window.sil=async id=>{
+  if(confirm("Silinsin mi?")){
+    await deleteDoc(doc(db,"patients",id));
+    load();
   }
-
-  filtered.forEach(r => {
-    const badges = (r.kategoriler||[]).map(k => {
-      const alt = k.alt ? ` • ${k.alt}` : "";
-      const hyp = k.hyp ? ` • ${k.hyp}` : "";
-      return `<span class="badge">${k.kategori}${alt}${hyp}</span>`;
-    }).join("");
-
-    list.innerHTML += `
-      <div class="list-card">
-        <div style="font-weight:900;font-size:16px">${r.ad}</div>
-        <div class="small">TC: ${r.tc}</div>
-        <div class="badges">${badges || `<span class="badge badge2">Kategori yok</span>`}</div>
-        <button class="btn-danger" onclick="sil('${r.id}')">Sil</button>
-      </div>
-    `;
-  });
 };
-
-window.temizle = () => {
-  $("fad").value = "";
-  $("ftc").value = "";
-  $("fkat").value = "";
-  filtre();
-};
-
-window.sil = async (id) => {
-  if(!confirm("Bu kaydı silmek istiyor musun?")) return;
-  await deleteDoc(doc(db, "patients", id));
-  await load();
-};
-
-// ilk açılışta kart alanını boş mesajla doldur
-window.selectedCats = selectedCats;
 </script>
 </head>
 
 <body>
-  <h1>🌲 Aile Hekimliği</h1>
+<h1>🌲 Aile Hekimliği</h1>
 
+<div class="tabbar">
+  <div id="tNew" class="tab active" onclick="showTab('new')">➕ Yeni Hasta</div>
+  <div id="tList" class="tab" onclick="showTab('list')">📋 Hasta Listesi</div>
+</div>
+
+<div id="newTab">
   <div class="panel">
-    <div class="hint">Hasta kaydı: kategori seç → ekle → kartlardan doldur → Kaydet</div>
-
-    <div class="row">
-      <div class="col"><input id="ad" placeholder="Ad Soyad"></div>
-      <div class="col"><input id="tc" placeholder="TC"></div>
-    </div>
-
-    <div class="row">
-      <div class="col">
-        <select id="katSec"></select>
-      </div>
-      <div class="col">
-        <button class="btn-secondary" onclick="katEkle()">+ Kategori Ekle</button>
-      </div>
-    </div>
-
+    <input id="ad" placeholder="Ad Soyad">
+    <input id="tc" placeholder="TC">
+    <select id="katSec"></select>
+    <button onclick="katEkle()">+ Kategori Ekle</button>
     <div id="cards"></div>
-
-    <div class="divider"></div>
     <button onclick="ekle()">Kaydet</button>
   </div>
+</div>
 
+<div id="listTab" style="display:none">
   <div class="panel">
-    <div class="row">
-      <div class="col"><input id="fad" placeholder="İsim filtre" oninput="filtre()"></div>
-      <div class="col"><input id="ftc" placeholder="TC filtre" oninput="filtre()"></div>
-      <div class="col">
-        <select id="fkat" onchange="filtre()"></select>
-      </div>
-    </div>
-
-    <div class="top-actions">
-      <button class="btn-secondary" onclick="temizle()">Filtreleri temizle</button>
-      <button class="btn-secondary" onclick="load()">Yenile</button>
-    </div>
-
-    <div id="list" style="margin-top:10px">Yükleniyor…</div>
+    <select id="fkat" onchange="filtre()"></select>
+    <div id="list">Yükleniyor…</div>
   </div>
+</div>
 
-<script>
-  // kart alanına ilk mesaj
-  setTimeout(()=>{
-    const cards = document.getElementById("cards");
-    if(cards && !cards.innerHTML.trim()){
-      cards.innerHTML = `<div class="hint">Kategori seçip “+ Kategori Ekle” deyince kartlar burada çıkacak.</div>`;
-    }
-  }, 0);
-</script>
 </body>
 </html>
